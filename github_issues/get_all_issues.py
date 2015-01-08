@@ -5,6 +5,18 @@ import base64
 import json
 import os
 
+"""
+Filter based on the "body" of an issue.
+Return True if the issue may be an exception report with stack trace, otherwise False
+"""
+def filter_body(body):
+	body = body.lower()
+	if body.find("exception")==-1 and body.find("error")==-1: # Should contain "exception" of "error"
+		return False
+	if len(body.split("at ") ) <4:  # Should contain "at " more than 3 times
+		return False
+	return True
+
 if __name__ == '__main__':
 
 	cfg = config.config   # Configuration for username and password
@@ -60,7 +72,7 @@ if __name__ == '__main__':
 
 	f = open(folder_path+ "/fail.txt", "w")
 	f.close()
-
+	
 	for i in range(1, number_issues+1): # Fetch issue
 		print "Issue %d:" % i ,
 		try:
@@ -79,3 +91,20 @@ if __name__ == '__main__':
 			f = open(folder_path+"/fail.txt", 'a')
 			f.write(str(i)+"\n")
 			f.close()
+
+	print "Filter the issues:"
+	
+	f = open(folder_path+"/alternatives.txt", "w")
+	for i in range(1, number_issues+1):
+		print "Issue %d:" % i,
+		path = "%s/issues_%d.json" % (folder_path, i)
+		if not os.path.exists(path):
+			continue
+		issue_info = json.load(file(path))
+		body = issue_info[u"body"]
+		if filter_body(body):
+			print "Yes"
+			f.write(str(i) + "\n")
+		else:
+			print "No"
+	f.close()
